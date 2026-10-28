@@ -151,26 +151,88 @@ var hub = document.getElementById("orbitHub");
 var cards = [];
 
 function hostOf(url){ try { return new URL(url).hostname.replace(/^www\./,""); } catch(e){ return ""; } }
-function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+
+function svgIcon(){
+  var NS = "http://www.w3.org/2000/svg";
+  var svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("width", "14");
+  svg.setAttribute("height", "14");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("fill", "none");
+  svg.setAttribute("stroke", "currentColor");
+  svg.setAttribute("stroke-width", "2.2");
+  svg.setAttribute("stroke-linecap", "round");
+  svg.setAttribute("stroke-linejoin", "round");
+  ["M7 17L17 7", "M8 7h9v9"].forEach(function(d){
+    var p = document.createElementNS(NS, "path");
+    p.setAttribute("d", d);
+    svg.appendChild(p);
+  });
+  return svg;
+}
 
 function render(){
-  var html = MEMBERS.map(function(m){
+  MEMBERS.forEach(function(m){
     var has = !!m.url;
-    var btn = has
-      ? '<span class="btn btn-primary">Xem portfolio <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></svg></span>'
-      : '<span class="btn btn-disabled">Sắp cập nhật link</span>';
-    var host = has ? '<span class="host" title="'+esc(m.url)+'">'+esc(hostOf(m.url))+'</span>' : '<span class="host">—</span>';
-    var inner =
-      '<div class="card-top"><div class="avatar" style="background:'+m.color+';color:'+m.colorFg+'">'+esc(m.initials)+'</div>' +
-      '<div><div class="num">THÀNH VIÊN '+m.num+'</div><span class="status '+(has?"ready":"pending")+'">'+(has?"● Có link portfolio":"○ Sắp cập nhật")+'</span></div></div>' +
-      '<h2 class="name">'+esc(m.name)+'</h2>' +
-      '<div class="card-foot">'+ btn + host +'</div>';
+    var card = document.createElement(has ? "a" : "article");
+    card.className = "card";
+    card.setAttribute("aria-label", has ? "Mở portfolio của " + m.name : m.name + " — chưa có link portfolio");
     if(has){
-      return '<a class="card" href="'+esc(m.url)+'" target="_blank" rel="noopener noreferrer" aria-label="Mở portfolio của '+esc(m.name)+'">'+inner+'</a>';
+      card.setAttribute("href", m.url);
+      card.setAttribute("target", "_blank");
+      card.setAttribute("rel", "noopener noreferrer");
     }
-    return '<article class="card" aria-label="'+esc(m.name)+' — chưa có link portfolio">'+inner+'</article>';
-  }).join("");
-  ring.insertAdjacentHTML("beforeend", html);
+
+    var top = document.createElement("div");
+    top.className = "card-top";
+    var avatar = document.createElement("div");
+    avatar.className = "avatar";
+    avatar.style.background = m.color;
+    avatar.style.color = m.colorFg;
+    avatar.textContent = m.initials;
+    var meta = document.createElement("div");
+    var num = document.createElement("div");
+    num.className = "num";
+    num.textContent = "THÀNH VIÊN " + m.num;
+    var status = document.createElement("span");
+    status.className = "status " + (has ? "ready" : "pending");
+    status.textContent = has ? "● Có link portfolio" : "○ Sắp cập nhật";
+    meta.appendChild(num);
+    meta.appendChild(status);
+    top.appendChild(avatar);
+    top.appendChild(meta);
+
+    var name = document.createElement("h2");
+    name.className = "name";
+    name.textContent = m.name;
+
+    var foot = document.createElement("div");
+    foot.className = "card-foot";
+    var btn = document.createElement("span");
+    if(has){
+      btn.className = "btn btn-primary";
+      btn.textContent = "Xem portfolio ";
+      btn.appendChild(svgIcon());
+    } else {
+      btn.className = "btn btn-disabled";
+      btn.textContent = "Sắp cập nhật link";
+    }
+    foot.appendChild(btn);
+    var host = document.createElement("span");
+    host.className = "host";
+    if(has){
+      host.textContent = hostOf(m.url);
+      host.title = m.url;
+    } else {
+      host.textContent = "—";
+    }
+    foot.appendChild(host);
+
+    card.appendChild(top);
+    card.appendChild(name);
+    card.appendChild(foot);
+    ring.appendChild(card);
+  });
   cards = Array.prototype.slice.call(ring.querySelectorAll(".card"));
 }
 
